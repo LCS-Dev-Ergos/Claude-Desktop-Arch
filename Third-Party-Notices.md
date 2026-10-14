@@ -16,6 +16,6 @@ The PKGBUILD records `LicenseRef-Proprietary` for the installed application and 
 
 The pinned primary fingerprint is `31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE`. Verify key changes against [Anthropic's installation documentation](https://support.claude.com/en/articles/10065433-install-claude-desktop); a repository edit alone does not establish trust in a replacement key.
 
-## Design Reference
+## Packaging Attribution
 
-[diazkev314/claude-desktop-aur](https://github.com/diazkev314/claude-desktop-aur/tree/76ad64b77415983bbfb2f10a68031eda7adde0ab) informed the packaging approach. The reference remains attributed separately; this repository's MIT license does not apply to material hosted by that project.
+[diazkev314/claude-desktop-aur](https://github.com/diazkev314/claude-desktop-aur/tree/76ad64b77415983bbfb2f10a68031eda7adde0ab) is the upstream packaging reference. Its attribution is independent of this repository's licensing; the MIT license here does not apply to material hosted by that project.

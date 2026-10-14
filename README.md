@@ -9,6 +9,31 @@ Arch Linux packaging of Anthropic's official Linux desktop application with requ
 - A configured Secret Service provider or KWallet for credential storage.
 - An ordinary user account for building and running the application.
 
+## Packaging Architecture
+
+Release selection and package construction have separate responsibilities. The updater authenticates a release through Anthropic's signed APT repository and records its inspected layout. The package build consumes that pinned versioned installer, verifies all source checksums, and stages selected application assets against the recorded baseline.
+
+```mermaid
+flowchart TB
+    accTitle: Package Selection, Construction, And Execution
+    accDescr: Authenticated release metadata pins the build inputs; the resulting Arch package installs a restricted launcher and the upstream application runtime.
+    subgraph selection[Release Selection]
+        Feed["Signed APT metadata"] --> Inspector["check-update.py<br/>Authenticate and inspect"]
+        Inspector --> Pins["PKGBUILD · .SRCINFO<br/>upstream.json"]
+    end
+    subgraph construction[Package Construction]
+        Asset["Versioned official .deb"] --> Build["makepkg<br/>Verify all source hashes"]
+        Build --> Stage["package-assets.py<br/>Validate and stage selected assets"]
+        Stage --> Package["Arch package archive"]
+    end
+    Pins --> Build
+    Inspector -. "Select version and asset hash" .-> Asset
+    Package --> Launcher["claude-desktop<br/>Restricted launch options"]
+    Launcher --> Runtime["Bundled Electron<br/>ASAR and native modules"]
+```
+
+The upstream public signing key and release-selection tooling belong to the maintainer workflow. Building a pinned package uses the versioned installer, local helpers, and inspection manifest; it does not select a new release from APT. The package preserves the upstream executable and resource paths, replaces the launch command, and omits the setuid sandbox helper. See [Packaging Architecture](docs/Packaging-Architecture.md) for component responsibilities, installed paths, and runtime boundaries.
+
 ## Build And Install
 
 Install the build tools and run these commands from the repository root:
@@ -43,16 +68,30 @@ The updater verifies signed APT metadata with the pinned Anthropic key, checks m
 
 ```mermaid
 flowchart TD
-    A[Verify signed upstream metadata] --> B[Verify index and asset integrity]
-    B --> C[Inspect runtime, dependencies, and layout]
-    C --> D{Compatibility changed?}
-    D -->|Yes| E[Review compatibility changes]
-    D -->|No| F[Review version and checksum changes]
-    E --> G[Apply metadata update]
-    F --> G
-    G --> H[Build and verify in a clean Arch chroot]
-    H --> I[Test the desktop integrations affected by the release]
+    accTitle: Authenticated Release Review And Update
+    accDescr: An initial preview authenticates the candidate and distinguishes failure, downgrade, current release, ordinary update, and compatibility review before explicit application.
+    Metadata["Verify InRelease signature and freshness<br/>Verify Packages size and SHA-256"] --> Asset["Verify .deb size and SHA-256"]
+    Metadata -->|Failure| Error["Verification or write failure<br/>Exit 1"]
+    Asset -->|Failure| Error
+    Asset --> Downgrade{"Older than pinned release?"}
+    Downgrade -->|Yes| Error
+    Downgrade -->|No| Payload["Inspect identity, dependencies, and layout"]
+    Payload -->|Failure| Error
+    Payload --> Version{"Same version as pinned release?"}
+    Version -->|Yes| Identity{"Inspection manifest<br/>unchanged?"}
+    Identity -->|No| Error
+    Identity -->|Yes| Current["Already current<br/>Exit 3 · no metadata changes"]
+    Version -->|No| Compatibility{"Compatibility changed?"}
+    Compatibility -->|Yes| Review["Review dependency, layout, and runtime changes<br/>Exit 4 from unacknowledged preview"]
+    Compatibility -->|No| Preview["Review version and checksum diff<br/>Exit 0 from preview"]
+    Review -->|"--apply --reviewed"| Apply["Stage recipe, manifest, and generated .SRCINFO<br/>Back up and replace metadata"]
+    Preview -->|"--apply"| Apply
+    Apply -->|Failure| Error
+    Apply --> Chroot["Verify sources and build in clean Arch chroot"]
+    Chroot --> Acceptance["Review archive and Namcap findings<br/>Test affected desktop integrations"]
 ```
+
+The diagram starts with a preview. Compatibility acknowledgment is a separate maintainer action; automation never supplies `--reviewed`. A successful metadata update is not a completed build or a desktop acceptance result.
 
 Preview a release, then apply an accepted candidate:
 
@@ -61,7 +100,7 @@ python scripts/check-update.py
 python scripts/check-update.py --apply
 ```
 
-Use `--version VERSION` to select an exact release. Changes to dependency metadata, resource layout, native-module paths, the ASAR entry point, or the Electron major version require manual review. After addressing those changes, `--apply --reviewed` acknowledges the compatibility gate; it cannot bypass authentication, checksums, archive validation, or downgrade rejection.
+Use `--version VERSION` to select an exact release. Changes to dependency metadata, resource layout, native-module paths, or the Electron major version require manual review. After addressing those changes, `--apply --reviewed` acknowledges the compatibility gate; it cannot bypass authentication, checksums, archive validation, identity checks, or downgrade rejection. An unexpected ASAR entry point fails inspection with exit code `1` and requires a reviewed verifier change before the updater can accept it.
 
 | Exit Code | Meaning |
 | --- | --- |
@@ -97,6 +136,8 @@ namcap PKGBUILD /path/to/the-built-package.pkg.tar.zst
 Review Namcap findings. Proprietary binaries can produce hardening, stripping, and dynamic-dependency warnings. The three Cowork compatibility symlinks also produce diagnostics because their targets are optional dependencies. New findings require investigation rather than broad suppression.
 
 After installation, verify startup, actual renderer isolation, credential persistence after normal menu exit, protocol handlers, and the integrations affected by the release. Forced termination, login-session changes, MCP, Claude Code, and Cowork require their own acceptance tests.
+
+See [Validation And Recovery](docs/Validation-And-Recovery.md) for source and archive checks, renderer evidence, updater recovery, and rollback boundaries.
 
 ## Runtime And Security
 
