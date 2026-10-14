@@ -31,6 +31,7 @@ jobs:
           # The bootstrap image has public trust anchors but no local signing key.
           pacman-key --init
           pacman-key --populate archlinux
+          install -Dm755 scripts/ci-nspawn.sh /usr/local/bin/systemd-nspawn
           useradd --create-home builder
           chown -R builder:builder "$GITHUB_WORKSPACE"
       - name: Authenticate And Check Sources
@@ -43,5 +44,6 @@ jobs:
         with:
           name: validation-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
           path: .ci-output/
+          include-hidden-files: true
           retention-days: 7
           if-no-files-found: warn
