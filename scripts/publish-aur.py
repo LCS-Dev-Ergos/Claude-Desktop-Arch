@@ -104,7 +104,7 @@ def main() -> None:
             f'-o UserKnownHostsFile={shlex.quote(str(hosts))} -o GlobalKnownHostsFile=/dev/null '
             '-o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=20')
         try:
-            changed = sync_package(root, 'ssh://aur@aur.archlinux.org/claude-desktop-local.git',
+            changed = sync_package(root, 'ssh://aur@aur.archlinux.org/claude-desktop-sandboxed.git',
                                    work / 'checkout', os.environ.get('AUR_COMMIT_NAME', ''),
                                    os.environ.get('AUR_COMMIT_EMAIL', ''))
             print('AUR updated.' if changed else 'AUR already matches the validated source snapshot.')

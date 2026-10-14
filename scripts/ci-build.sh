@@ -34,7 +34,7 @@ fi
 ) 2>&1 | tee "$root/.ci-output/chroot-build.log"
 arch-nspawn "$chroot/ci" --bind="$stage:/startdir" /usr/bin/sudo -u builduser \
   /usr/bin/bash -c 'cd /startdir && makepkg -f --verifysource' 2>&1 | tee "$root/.ci-output/chroot-integrity.log"
-arch-nspawn "$chroot/ci" /usr/bin/pacman -Qkk claude-desktop-local 2>&1 | tee "$root/.ci-output/installed-integrity.log"
+arch-nspawn "$chroot/ci" /usr/bin/pacman -Qkk claude-desktop-sandboxed 2>&1 | tee "$root/.ci-output/installed-integrity.log"
 bash scripts/ci-namcap.sh "$chroot/ci" "$stage" 2>&1 | tee "$root/.ci-output/namcap.log"
 python scripts/ci_policy.py namcap .ci-output/namcap.log
 python - "$stage" "$root" <<'PY'
@@ -50,7 +50,7 @@ with tarfile.open(artifacts[0]) as archive:
     entries = archive.getmembers()
     assert all(item.uid == 0 and item.gid == 0 and not item.mode & 0o6000 for item in entries)
     assert not any(item.name == '.INSTALL' or item.name.endswith('/chrome-sandbox') for item in entries)
-    assert archive.extractfile('usr/share/licenses/claude-desktop-local/Packaging-MIT').read() == (root / 'LICENSE.md').read_bytes()
+    assert archive.extractfile('usr/share/licenses/claude-desktop-sandboxed/Packaging-MIT').read() == (root / 'LICENSE.md').read_bytes()
     assert archive.extractfile('usr/bin/claude-desktop').read() == (root / 'claude-desktop.sh').read_bytes()
     (root / '.ci-output/BUILDINFO').write_bytes(archive.extractfile('.BUILDINFO').read())
 with artifacts[0].open('rb') as source:

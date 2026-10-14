@@ -1,14 +1,14 @@
 # Arch Linux packaging of Anthropic's official Linux application.
 # Upstream version and asset hash are updated by scripts/check-update.py.
-pkgname=claude-desktop-local
+pkgname=claude-desktop-sandboxed
 pkgver=2.37337.1
-pkgrel=2
-pkgdesc='Unofficial Claude Desktop packaging from official Linux assets'
+pkgrel=3
+pkgdesc='Claude Desktop with required renderer sandboxing and a restricted launcher'
 arch=('x86_64')
 url='https://claude.com/download'
 license=('LicenseRef-Proprietary' 'MIT')
 provides=('claude-desktop')
-conflicts=('claude-desktop' 'claude-desktop-bin')
+conflicts=('claude-desktop' 'claude-desktop-bin' 'claude-desktop-local')
 options=('!strip' '!debug')
 
 # Direct ELF dependencies plus desktop integration used through dlopen/D-Bus.

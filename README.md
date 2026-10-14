@@ -1,8 +1,14 @@
-# Claude Desktop For Arch Linux
+# Claude Desktop Sandboxed For Arch Linux
 
 Unofficial Arch Linux packaging of Anthropic's official Linux desktop application. This repository contains the package recipe, an authenticated upstream updater, a restricted launcher, and regression tests. Application binaries are downloaded from Anthropic when building; they are not stored in this repository.
 
-The package is named `claude-desktop-local` and supports `x86_64`. It provides the `claude-desktop` command, desktop entry, icons, and protocol handlers. It conflicts with packages installing the same desktop application, while the independent Claude Code CLI can coexist.
+The package is named `claude-desktop-sandboxed` and supports `x86_64`. It provides the `claude-desktop` command, desktop entry, icons, and protocol handlers. It conflicts with packages installing the same desktop application, while the independent Claude Code CLI can coexist.
+
+## Package Variant
+
+This variant requires renderer sandboxing through unprivileged user namespaces and omits the setuid `chrome-sandbox` fallback. Its launcher restricts Chromium options, rejects switches that disable security features, and removes Node/Electron entry-point environment overrides. Systems without working unprivileged user namespaces cannot use this package; it does not fall back to an unsandboxed launch. These constraints distinguish it from general-purpose repackaging of the same official Linux asset. They do not modify or audit Anthropic's proprietary application code or isolate all application processes and tools.
+
+The earlier personal package was named `claude-desktop-local`. The new package conflicts with it so an installation transaction can replace the old package explicitly. The executable, application directory, desktop identity, and profile paths retain their existing names. Quit the application normally before upgrading; verify credential persistence after restarting. The rename itself does not require moving or deleting the profile.
 
 ## Build And Install
 
@@ -22,7 +28,7 @@ The updater previews a newer release; it does not apply changes or install the a
 `-f --verifysource` checks sources even when a package artifact already exists; it does not rebuild the package. For an existing artifact, inspect and install one exact file:
 
 ```sh
-sudo pacman -U ./claude-desktop-local-2.37337.1-2-x86_64.pkg.tar.zst
+sudo pacman -U ./claude-desktop-sandboxed-2.37337.1-3-x86_64.pkg.tar.zst
 ```
 
 Replace that filename with the version built from the current PKGBUILD. Select an appropriate portal backend and keyring for the desktop. Optional components are described below.
@@ -121,7 +127,7 @@ bash -n PKGBUILD claude-desktop.sh
 shellcheck claude-desktop.sh
 makepkg --printsrcinfo > .SRCINFO.generated
 diff -u .SRCINFO .SRCINFO.generated
-namcap PKGBUILD ./claude-desktop-local-2.37337.1-2-x86_64.pkg.tar.zst
+namcap PKGBUILD ./claude-desktop-sandboxed-2.37337.1-3-x86_64.pkg.tar.zst
 ```
 
 Install `shellcheck` and `namcap` for those optional development checks. Tests cover signed-metadata tampering, key pinning, freshness, asset hashes, unsafe archive members, launcher input, compatibility gates, and update rollback. The signed fixture is used for signature tests; freshness cases use explicit test timestamps.
