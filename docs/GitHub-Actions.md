@@ -28,7 +28,7 @@ flowchart TD
 
 Actions are pinned to full commit IDs, and the Arch bootstrap image is pinned to its manifest digest. Arch tools and chroot dependencies are updated from signed official repositories for each run. This intentionally tests the current Arch environment; package output is not claimed to be bit-for-bit reproducible across repository updates. Review changes to action pins, the image digest, CI scripts, and workflow permissions through ordinary PRs.
 
-The validation container needs `--privileged` for `systemd-nspawn`. It runs on a disposable GitHub-hosted VM with no publication credentials. Use GitHub-hosted runners for these workflows; do not execute untrusted PR recipes on a persistent runner containing private data or credentials. Workflows never use `pull_request_target` or a privileged `workflow_run` artifact handoff.
+The validation container needs `--privileged` for `systemd-nspawn`. Its `/run` is a temporary filesystem, and bootstrap initializes the container's machine ID and local pacman signing key before creating the chroot. The key is ephemeral and signs local pacman trust records; it is unrelated to AUR SSH credentials. Package signatures remain required. The container runs on a disposable GitHub-hosted VM with no publication credentials. Use GitHub-hosted runners for these workflows; do not execute untrusted PR recipes on a persistent runner containing private data or credentials. Workflows never use `pull_request_target` or a privileged `workflow_run` artifact handoff.
 
 ## Repository Setup
 

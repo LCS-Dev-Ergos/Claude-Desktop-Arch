@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 45
     container:
       image: archlinux:base@sha256:3c64b538588416593f69a1aebd2f2ec0f2541b29159f32556fa7def2167147a0
-      options: --privileged
+      options: --privileged --tmpfs /run:rw,nosuid,nodev
     steps:
       - name: Check Out Exact Commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -26,6 +26,11 @@ jobs:
       - name: Install Signed Arch Tools
         run: |
           pacman -Syu --noconfirm --needed base-devel python curl gnupg devtools shellcheck actionlint
+          # nspawn needs the outer container identity and volatile runtime paths.
+          systemd-machine-id-setup
+          # The bootstrap image has public trust anchors but no local signing key.
+          pacman-key --init
+          pacman-key --populate archlinux
           useradd --create-home builder
           chown -R builder:builder "$GITHUB_WORKSPACE"
       - name: Authenticate And Check Sources
