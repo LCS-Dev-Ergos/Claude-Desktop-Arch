@@ -32,7 +32,7 @@ The validation container needs `--privileged` for `systemd-nspawn`. Its `/run` i
 
 ## Repository Setup
 
-Publish the source repository with `main` as its default branch. Enable GitHub Actions and protect `main`: require PR review and the `Arch Source And Chroot` validation check, and prevent unreviewed pushes or automatic merging of compatibility changes. The protected AUR environment does not substitute for source-code review. A person who can change workflows on `main` controls the release implementation.
+Publish the source repository with `main` as its default branch. Enable GitHub Actions and protect `main`: require PRs and the `Arch Source And Chroot` validation check from the GitHub Actions app, up-to-date branches, resolved conversations, no administrator bypass, and no force pushes or deletions. For a sole maintainer, set required approvals to zero and review/merge PRs manually; an independent-review policy requires another eligible approver. Prevent automatic merging of compatibility changes. The protected AUR environment does not substitute for source-code review. A person who can change workflows on `main` controls the release implementation.
 
 Configure these values in GitHub's repository settings:
 
@@ -79,6 +79,12 @@ The periodic inspector applies only a candidate accepted by the existing compati
 Enable notifications for failed scheduled runs and inspect the `Check Upstream` run summaries for compatibility reports. A compatibility report is a successful inspection requiring a manual action, not an authentication failure.
 
 The PR job never force-pushes. An existing open, merged, or closed PR for the same version/hash is preserved. A candidate branch without a PR stops for manual recovery; inspect that branch and open the PR manually if a previous PR-creation attempt failed. Review the authenticated version/hash diff, runtime versions, Namcap log, and test/build result before merging. No workflow auto-merges a PR.
+
+### Testing The PR Token
+
+After storing `UPSTREAM_PR_TOKEN`, manually run `Check Upstream` from `main` with **test_pr_token** enabled. If the authenticated release is current, a separate job creates a clearly marked draft PR changing only `docs/Upstream-PR-Token-Test.md`. The test exercises the stored token's branch-push and PR-create permissions and checks that the normal PR validation workflow starts. It does not invent an application version, change package metadata, or acknowledge compatibility changes. Verify the required check, then close the draft without merging it. Existing PRs or remote branches from the same run are preserved on retries.
+
+The option defaults to false and is ignored by scheduled runs. A real ordinary candidate still uses the production update-PR path; compatibility changes still require manual review. A document-only token test and offline candidate-validation tests do not establish that a future authenticated release will create its update PR successfully.
 
 ## AUR Source Transaction
 
