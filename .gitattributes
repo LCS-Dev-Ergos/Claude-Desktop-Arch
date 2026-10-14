@@ -1,0 +1,11 @@
+PKGBUILD text eol=lf
+.SRCINFO text eol=lf
+.gitignore text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.conf text eol=lf
+*.md text eol=lf
+keys/*.asc -text
+tests/fixtures/* -text

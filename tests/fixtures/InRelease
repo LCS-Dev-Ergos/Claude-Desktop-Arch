@@ -1,0 +1,49 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Acquire-By-Hash: yes
+Architectures: amd64 arm64
+Codename: stable
+Components: main
+Date: Fri, 09 Oct 2026 20:31:56 +0000
+Valid-Until: Fri, 16 Oct 2026 20:31:56 UTC
+Description: Anthropic Claude Desktop (stable) package repository
+Label: Anthropic
+Origin: Anthropic
+Suite: stable
+MD5Sum:
+ b7907eb0b93fe3253902c63b4b42b255            55788 main/binary-amd64/Packages
+ be4d9a503ea8f698ec1922ea0e93b5da             6531 main/binary-amd64/Packages.gz
+ 7f8cfc6340a3f05202705b2ed0f8206b            56412 main/binary-arm64/Packages
+ b4de356e7a41b20e597b8449fdb0e85c             6542 main/binary-arm64/Packages.gz
+SHA1:
+ 84869d8d9ae0712513c478db5216b7411662f5f2            55788 main/binary-amd64/Packages
+ 1a430e93947ea448ff4d078f808dbda32e6ad756             6531 main/binary-amd64/Packages.gz
+ c2a7425866322fba2241eec9c4b7aa27dd27cc10            56412 main/binary-arm64/Packages
+ 1148de3b9e4c6b32f436c8d8d7e6b56a0bfe6ff1             6542 main/binary-arm64/Packages.gz
+SHA256:
+ 2aedddc8c7781960444dcfcfb78337578951bbec6109a5c2601395cfb2ae247b            55788 main/binary-amd64/Packages
+ 7d3129d95965e79b55b3c31b1dc963c785bd403febbd285e34a597f3eacbd881             6531 main/binary-amd64/Packages.gz
+ 0a37588f48392dec035e40776226cbdba4ae04d61f55ee1ddeb59cb16c18a846            56412 main/binary-arm64/Packages
+ 489dd72587bc17d5dc78c1d735c77da023a920563b17db4def5fa3746bb710dc             6542 main/binary-arm64/Packages.gz
+SHA512:
+ aeaeb44ed3af829467297aef8c0c66bb0c8e7533141ec9b72f9ae854937a24be9f0809d57a78b86ca762877d826701003141933ee74ab95d29bf96604d08b618            55788 main/binary-amd64/Packages
+ e617afa8a09076a832f667b71a34b42c7d3eec43b4d081672962cd37a69b02d2e59c74d22b304a8c81835d5eba92fcb2f856e81f4fc38493786f1c87e6f62b9b             6531 main/binary-amd64/Packages.gz
+ dfec5415b021b682d1d407b10cd65e77250a3831fb3db708dadcfdfd24d00f530c9751890d14cdc11bb5a3e3289933423dabaa472d0f2261f0b8a17610c89c63            56412 main/binary-arm64/Packages
+ 1823aadf3a0ef3b9cbc8894e603d69390768280f8c7abbf784e5f95b14d899dc0d4934c47cf057a32cad9b0f5e41d4a86c2cbe3d4e8b0fbae1ab334421b8e430             6542 main/binary-arm64/Packages.gz
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEMd3eJN36tnn0LXvSuqkp/xp+ys4FAmrJT8YACgkQuqkp/xp+
+ys65TA//ThF/JnXIahymH0e0i1g70565DPvWsO+JWW/Jdow9VEgWBI7SvyUOLvmg
+SPHuyRC3AzOWZz8sZHPlGvzIR0ElNkVOVWo25FxgkTg8O8T/mWXrYJSORckI3E89
+QamWZvDESwUwgH73Z2dk49LjTdALLOICCecorQngAEb5Xg8rFjP+QJubsYXr3+uz
+8Bb5UeAe/aivjNt2D+aLnW60vozDg1e5mpbv+mcetO0uvfwuupUeR5b+dLIzx421
+ZRabYzBwb+e5smFMrOkmvJ2ztJ/LkKVP9WkPiqlqNfKgGp9lGLiwnu4cKhHvC7Tx
+axntlEXJn/9C+uNJMEeZJkrO/tRqRraPOv2O1M5hXwv0St1UyQARwHBcCGzRQC/C
+sytVq5WGeTaYuR3duoGIIPtw88e7v4HiO9FWp2IZSg2HSlF3WlwaQRpWcaSQF4TX
+cmmWuu0wtWhKMnIRL1slYHzrLsIkc6OShm9jzpWLbAeSgbWOQZ1tCQaYLojUnfqJ
+hDS4ZHIOHShYGd90AAh09L+8jRSOr/preASEiRYy6iLrNiKivUiCVJ1IjPETWM2C
+NHm4csWOVMVO4pfMKU+k6kE6Hu/Ii0PeAMjzhinHsxlsTmmk8krkMh9X/wGrhJeO
+lG5X/iWV0RYul5/MoprBNXknVqFutlgymRjPw9io+AgpiLxEzT0=
+=1wQY
+-----END PGP SIGNATURE-----
