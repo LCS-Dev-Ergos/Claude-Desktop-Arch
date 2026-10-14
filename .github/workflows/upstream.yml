@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '23 6 * * *'
   workflow_dispatch:
+    inputs:
+      test_pr_token:
+        description: Create a document-only draft PR when the upstream release is current
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -79,3 +84,19 @@ jobs:
           GH_TOKEN: ${{ secrets.UPSTREAM_PR_TOKEN }}
           CANDIDATE_DIR: ${{ runner.temp }}/upstream-candidate
         run: python3 scripts/open-update-pr.py "$CANDIDATE_DIR"
+
+  test-token:
+    needs: inspect
+    if: github.event_name == 'workflow_dispatch' && inputs.test_pr_token && needs.inspect.outputs.status == 'current'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check Out Trusted Main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Test Token With Document-Only Draft PR
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_PR_TOKEN }}
+        run: python3 scripts/test-pr-token.py
