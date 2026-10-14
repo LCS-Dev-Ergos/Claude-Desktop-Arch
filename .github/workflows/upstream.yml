@@ -1,0 +1,80 @@
+name: Check Upstream
+
+on:
+  schedule:
+    - cron: '23 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-update
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: archlinux:base@sha256:3c64b538588416593f69a1aebd2f2ec0f2541b29159f32556fa7def2167147a0
+    outputs:
+      status: ${{ steps.inspect.outputs.status }}
+    steps:
+      - name: Check Out Trusted Main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Install Signed Inspection Tools
+        run: |
+          pacman -Syu --noconfirm --needed base-devel python curl gnupg
+          useradd --create-home builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+      - name: Authenticate Candidate Without Publication Credentials
+        id: inspect
+        run: |
+          chown builder:builder "$GITHUB_OUTPUT" "$GITHUB_STEP_SUMMARY"
+          runuser -u builder -- bash scripts/ci-upstream.sh
+      - name: Retain Candidate Data
+        if: steps.inspect.outputs.status == 'candidate'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: upstream-candidate
+          path: .ci-output/update/
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+      - name: Retain Inspection Report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: upstream-inspection
+          path: |
+            .ci-output/upstream.log
+            .ci-output/report.md
+          retention-days: 7
+          if-no-files-found: warn
+
+  propose:
+    needs: inspect
+    if: needs.inspect.outputs.status == 'candidate'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check Out Trusted Main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Download Only This Run's Candidate
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: upstream-candidate
+          path: ${{ runner.temp }}/upstream-candidate
+      - name: Validate Candidate Data And Open PR
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_PR_TOKEN }}
+          CANDIDATE_DIR: ${{ runner.temp }}/upstream-candidate
+        run: python3 scripts/open-update-pr.py "$CANDIDATE_DIR"

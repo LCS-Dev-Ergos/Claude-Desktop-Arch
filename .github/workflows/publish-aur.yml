@@ -1,0 +1,83 @@
+name: Publish AUR
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - PKGBUILD
+      - .SRCINFO
+      - claude-desktop.sh
+      - upstream.py
+      - package-assets.py
+      - upstream.json
+      - LICENSE.md
+      - scripts/ci-*
+      - scripts/ci_policy.py
+      - scripts/publish-aur.py
+      - .github/workflows/validate.yml
+      - .github/workflows/publish-aur.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aur-publication
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: vars.AUR_PUBLISH_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/validate.yml
+
+  gate:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Check Out Validated Commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Require Reviewer And Main-Only Environment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/environments/aur" > "$RUNNER_TEMP/aur-environment.json"
+          gh api "repos/$GITHUB_REPOSITORY/environments/aur/deployment-branch-policies?per_page=100" > "$RUNNER_TEMP/aur-branches.json"
+          python3 scripts/ci_policy.py environment "$RUNNER_TEMP/aur-environment.json" "$RUNNER_TEMP/aur-branches.json"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" = "$GITHUB_SHA"
+
+  publish:
+    needs: gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: aur
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Check Out Validated Commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Recheck Gate After Approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/environments/aur" > "$RUNNER_TEMP/aur-environment.json"
+          gh api "repos/$GITHUB_REPOSITORY/environments/aur/deployment-branch-policies?per_page=100" > "$RUNNER_TEMP/aur-branches.json"
+          python3 scripts/ci_policy.py environment "$RUNNER_TEMP/aur-environment.json" "$RUNNER_TEMP/aur-branches.json"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)" = "$GITHUB_SHA"
+      - name: Publish Source Snapshot With Pinned SSH Host
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          AUR_KNOWN_HOSTS: ${{ secrets.AUR_KNOWN_HOSTS }}
+          AUR_COMMIT_NAME: ${{ vars.AUR_COMMIT_NAME }}
+          AUR_COMMIT_EMAIL: ${{ vars.AUR_COMMIT_EMAIL }}
+        run: python3 scripts/publish-aur.py
