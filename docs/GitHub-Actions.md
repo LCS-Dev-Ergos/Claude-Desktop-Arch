@@ -1,27 +1,57 @@
 # GitHub Actions And AUR Publication
 
-The workflows authenticate upstream releases, build in an official Arch clean chroot, propose ordinary updates, and publish reviewed package sources to AUR. Publication is disabled until explicitly configured. No application binary or Debian installer is uploaded as a GitHub artifact.
+The workflows authenticate upstream releases, build in an official Arch clean chroot, propose ordinary updates, and publish reviewed package sources to AUR. Publication requires an explicit enablement variable and a protected environment. GitHub artifacts contain reports and bounded source metadata, without application binaries or Debian installers.
 
 ## Workflow Boundaries
 
+### Inspection And Update Proposals
+
 ```mermaid
 flowchart TD
-    A[Scheduled or manual upstream check] --> B[Authenticate and inspect without publication secrets]
-    B --> C{Compatibility unchanged?}
-    C -->|No| D[Report required manual review]
-    C -->|Yes, newer release| E[Validate bounded candidate data]
-    E --> F[Open ordinary update PR]
-    F --> G[Human review and merge to main]
-    H[Other package changes] --> G
-    G --> I[Authenticate sources and build exact commit in clean Arch chroot]
-    I --> J[Check main-only environment and required reviewers]
-    J --> K[Approve deployment to aur]
-    K --> L[Recheck environment and current main commit]
-    L --> M[Publish seven source files using protected SSH credentials]
+    accTitle: Authenticated Upstream Inspection And Update Proposal
+    accDescr: Inspection has no publication secrets. Only ordinary candidates reach a separate credential-bearing PR job; compatibility changes require manual preparation.
+    Trigger["Daily schedule or manual run on main"] --> Inspect["inspect job<br/>Authenticate and inspect upstream"]
+    Inspect --> Outcome{"Inspection outcome"}
+    Outcome -->|Current| Current["Retain report<br/>No update PR"]
+    Outcome -->|Compatibility change| Review["Report review_required<br/>Manual preparation required"]
+    Outcome -->|Verification failure| Failed["Fail the run<br/>Retain available diagnostics"]
+    Outcome -->|Ordinary candidate| Data["Transfer four bounded data files<br/>From this run only"]
+    Data --> Validate["propose job<br/>Validate against trusted main code"]
+    Token["UPSTREAM_PR_TOKEN<br/>Repository secret"] -. "PR job credential" .-> Validate
+    Validate --> PR["Push version/hash branch<br/>Open update PR"]
+    PR --> CI["Normal PR validation<br/>Source checks and clean-chroot build"]
+    Review --> Manual["Review compatibility<br/>Prepare a manual update PR"]
+    Manual --> CI
+    CI --> Merge["Human review and merge"]
 ```
 
+The inspection job runs the updater without `--reviewed`. The PR job validates candidate data using code from the trusted checkout; it does not execute a recipe supplied by the candidate artifact. Its token is available to that job, so this validation is part of the credential boundary. The optional document-only token test is a separate manual path described below.
+
+### Protected AUR Publication
+
+```mermaid
+flowchart TD
+    accTitle: Validation And Approval Gates For AUR Publication
+    accDescr: Publication is enabled explicitly, validates the selected main commit, checks environment policy before and after human approval, and uses SSH only in the source-publication step.
+    Trigger["Main push or manual dispatch"] --> Enabled{"Enabled variable is true<br/>and ref is main?"}
+    Enabled -->|No| Skip["Skip publication"]
+    Enabled -->|Yes| Build["validate job<br/>Check and build exact commit"]
+    Build --> Gate["gate job<br/>Require reviewers, main-only policy,<br/>and current main SHA"]
+    Gate --> Approval["aur environment<br/>Required human approval"]
+    Approval --> Recheck["publish job<br/>Recheck policy and current main SHA"]
+    Recheck --> Publish["Validate seven-file source snapshot<br/>Compare with AUR master"]
+    SSH["Protected environment secrets<br/>SSH identity and pinned host keys"] -. "Final publication step" .-> Publish
+    Publish --> Same{"Identical snapshot?"}
+    Same -->|Yes| Noop["No-op"]
+    Same -->|No| Push["Commit forward update<br/>Push without force"]
+    Gate -. "Invalid policy or stale SHA" .-> Stop["Stop publication"]
+    Recheck -. "Invalid policy or stale SHA" .-> Stop
+```
+
+Validation and the pre-approval gate have no AUR SSH secrets. Environment approval releases the protected job; the workflow passes SSH values only to its final publication step after the policy recheck. A rejected approval or failed prerequisite prevents that step from running. The publisher validates the source snapshot before writing credentials and never runs package build code.
+
 | Workflow | Triggers | Credentials And Result |
-|---|---|---|
+| --- | --- | --- |
 | `validate.yml` | Pull requests, pushes to `main`, manual runs, reusable calls | Read-only GitHub token; authentication, tests, lint, source checks, clean-chroot build/install, archive checks, and reports |
 | `upstream.yml` | Daily at 06:23 UTC and manual runs on `main` | Inspection job has no publication secrets; separate PR job uses `UPSTREAM_PR_TOKEN` only for ordinary candidates |
 | `publish-aur.yml` | Package/publishing changes merged to `main`, or manual runs | Disabled unless `AUR_PUBLISH_ENABLED=true`; validates the same commit, checks environment policy, waits for approval, and uses environment-scoped SSH secrets |
@@ -37,9 +67,9 @@ Publish the source repository with `main` as its default branch. Enable GitHub A
 Configure these values in GitHub's repository settings:
 
 | Scope | Name | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | Repository secret | `UPSTREAM_PR_TOKEN` | Fine-grained token restricted to this repository with **Contents: Read and write** and **Pull requests: Read and write**; no Actions, administration, or workflow write access |
-| Repository variable | `AUR_PUBLISH_ENABLED` | Literal `true` enables the AUR pipeline; leave unset while preparing the first release |
+| Repository variable | `AUR_PUBLISH_ENABLED` | Literal `true` enables the AUR pipeline; `false` or an unset value skips publication |
 | `aur` environment secret | `AUR_SSH_PRIVATE_KEY` | Dedicated unencrypted SSH private key whose public key is registered on the intended AUR account |
 | `aur` environment secret | `AUR_KNOWN_HOSTS` | Independently verified SSH host-key entries for the literal host `aur.archlinux.org` |
 | `aur` environment variable | `AUR_COMMIT_NAME` | Maintainer name used for AUR Git commits |
@@ -65,7 +95,7 @@ Generate the dedicated key outside the repository, register only its public half
 
 `scripts/ci-build.sh` creates an official Arch base and a fresh devtools working copy, builds as an ordinary user, installs the result **inside the chroot**, and runs Namcap. It explicitly repeats source-integrity checks inside the chroot and verifies installed files with `pacman -Qkk`. `ci-namcap.sh` also checks the actual lint process status, since the devtools logging pipeline can mask a lint-tool failure. Archive checks require root-owned members, no setuid/setgid bits, no `.INSTALL`, no `chrome-sandbox`, and the exact reviewed launcher and packaging license. It records `.BUILDINFO`, a package SHA-256, and logs in `.ci-output/`. GitHub retains these diagnostics for seven days; proprietary build artifacts stay on the disposable runner.
 
-New Namcap errors fail validation. The only accepted errors are the exact three documented optional Cowork symlink diagnostics for `virtiofsd`, `OVMF_CODE_4M.fd`, and `OVMF_VARS_4M.fd`; they remain visible in the log. Warnings remain visible and require review when their meaning changes. CI does not establish native desktop rendering, renderer isolation, credential persistence, MCP, or Cowork behavior. Test the integrations affected by each release on a desktop before approving publication.
+New Namcap errors fail validation. The only accepted errors are the exact three documented optional Cowork symlink diagnostics for `virtiofsd`, `OVMF_CODE_4M.fd`, and `OVMF_VARS_4M.fd`; they remain visible in the log. Warnings remain visible and require review when their meaning changes. CI does not establish native desktop rendering, renderer isolation, credential persistence, MCP, or Cowork behavior. Test the integrations affected by each release on a desktop before approving publication. See [Validation And Recovery](Validation-And-Recovery.md) for local checks, runtime acceptance, and rollback boundaries.
 
 ## Ordinary And Compatibility Updates
 
@@ -82,7 +112,7 @@ The PR job never force-pushes. An existing open, merged, or closed PR for the sa
 
 ### Testing The PR Token
 
-After storing `UPSTREAM_PR_TOKEN`, manually run `Check Upstream` from `main` with **test_pr_token** enabled. If the authenticated release is current, a separate job creates a clearly marked draft PR changing only `docs/Upstream-PR-Token-Test.md`. The test exercises the stored token's branch-push and PR-create permissions and checks that the normal PR validation workflow starts. It does not invent an application version, change package metadata, or acknowledge compatibility changes. Verify the required check, then close the draft without merging it. Existing PRs or remote branches from the same run are preserved on retries.
+After storing `UPSTREAM_PR_TOKEN`, manually run `Check Upstream` from `main` with **test_pr_token** enabled. If the authenticated release is current, a separate job creates a clearly marked draft PR changing only `docs/Upstream-PR-Token-Test.md`. The test exercises the stored token's branch-push and PR-create permissions; the maintainer must then verify that normal PR validation starts and completes successfully. It does not invent an application version, change package metadata, or acknowledge compatibility changes. Verify the required check, then close the draft without merging it. Existing PRs or remote branches from the same run are preserved on retries.
 
 The option defaults to false and is ignored by scheduled runs. A real ordinary candidate still uses the production update-PR path; compatibility changes still require manual review. A document-only token test and offline candidate-validation tests do not establish that a future authenticated release will create its update PR successfully.
 
