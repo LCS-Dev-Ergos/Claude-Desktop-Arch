@@ -1,6 +1,6 @@
-# Claude Desktop For Arch Linux
+# Claude Desktop Sandboxed For Arch Linux
 
-Arch Linux packaging of Anthropic's official Linux desktop application with required renderer sandboxing and a restricted launcher. The package is named `claude-desktop-local`, supports `x86_64`, and installs the `claude-desktop` command, desktop entry, icons, and protocol handlers. The independent Claude Code CLI can coexist with this package.
+Arch Linux packaging of Anthropic's official Linux desktop application with required renderer sandboxing and a restricted launcher. The package is named `claude-desktop-sandboxed`, supports `x86_64`, and installs the `claude-desktop` command, desktop entry, icons, and protocol handlers. The independent Claude Code CLI can coexist with this package.
 
 ## Requirements
 
