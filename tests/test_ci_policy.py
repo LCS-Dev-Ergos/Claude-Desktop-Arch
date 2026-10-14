@@ -31,9 +31,9 @@ class PolicyTests(unittest.TestCase):
 
     def test_new_namcap_error_fails(self):
         """Only the exact reviewed optional-link diagnostics may pass the lint gate."""
-        known = 'claude-desktop-local E: Symlink (usr/libexec/virtiofsd) points to non-existing ../lib/virtiofsd\n'
+        known = 'claude-desktop-sandboxed E: Symlink (usr/libexec/virtiofsd) points to non-existing ../lib/virtiofsd\n'
         self.policy.check_namcap(known)
-        self.policy.check_namcap('claude-desktop-local W: ELF file lacks FULL RELRO\n')
+        self.policy.check_namcap('claude-desktop-sandboxed W: ELF file lacks FULL RELRO\n')
         for line in ('pkg E: Dependency libnew detected and not included',
                      'pkg E: Symlink (etc/secret) points to non-existing ../../secret'):
             with self.assertRaises(ValueError):
@@ -76,6 +76,14 @@ class PolicyTests(unittest.TestCase):
             (root / '.update-transaction.json').write_text('{}')
             with self.assertRaises(ValueError):
                 self.policy.snapshot(root)
+
+    def test_metadata_accepts_only_sandboxed_variant_identity(self):
+        """The release gate must reject the old personal name and other package targets."""
+        text = (ROOT / '.SRCINFO').read_text()
+        self.policy.metadata(text)
+        for identity in ('claude-desktop-local', 'claude-desktop', 'unexpected-package'):
+            with self.subTest(identity=identity), self.assertRaises(ValueError):
+                self.policy.metadata(text.replace('claude-desktop-sandboxed', identity))
 
     def test_downgrade_and_changed_same_version_are_rejected(self):
         """A successful old build cannot silently replace a newer AUR release."""

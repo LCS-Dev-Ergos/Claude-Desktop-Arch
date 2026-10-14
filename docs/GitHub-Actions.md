@@ -52,7 +52,7 @@ Create an environment named **`aur`** before enabling publication:
 1. Configure at least one **required reviewer**. Allow self-review if a sole maintainer must approve their own deployment; otherwise enable prevention of self-review. Prefer disabling administrator bypass where available.
 2. Set deployment branches/tags to **Selected branches and tags**. Add exactly one **branch** policy named `main`; add no wildcard or tag policies. Choosing “Protected branches only” does not satisfy this workflow's explicit policy check.
 3. Store the SSH key and verified host entries as environment secrets, not repository secrets. Configure the two commit-identity environment variables.
-4. Confirm the AUR account may create or maintain `claude-desktop-local`, review the AUR submission requirements and package naming, and check for an existing package before the first publication.
+4. Confirm the AUR account may create or maintain `claude-desktop-sandboxed`, review the AUR submission requirements and package naming, and check for an existing package before the first publication. Explain the enforced sandbox and restricted-launcher policy that distinguishes this variant; an available name does not establish that AUR will accept it.
 5. Enable `AUR_PUBLISH_ENABLED`, dispatch `Publish AUR` from `main`, inspect the completed validation, and approve the deployment.
 
 The jobs read the environment policy through GitHub's API before and after approval. Missing reviewers, additional branch/tag policies, a deleted environment, or a stale main commit stop publication. This guards against accidentally creating an unprotected environment merely by naming it in a workflow. Environment protection features depend on repository visibility and the GitHub plan; use a repository configuration that supports required reviewers. See [GitHub's Environment Documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments) and [Environment REST API](https://docs.github.com/en/rest/deployments/environments).
@@ -88,7 +88,7 @@ The option defaults to false and is ignored by scheduled runs. A real ordinary c
 
 ## AUR Source Transaction
 
-Publication uses the fixed endpoint `ssh://aur@aur.archlinux.org/claude-desktop-local.git` and the AUR `master` branch. It copies exactly:
+Publication uses the fixed endpoint `ssh://aur@aur.archlinux.org/claude-desktop-sandboxed.git` and the AUR `master` branch. It copies exactly:
 
 ```text
 PKGBUILD

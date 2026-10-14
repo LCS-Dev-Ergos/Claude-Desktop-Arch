@@ -8,7 +8,7 @@ The MIT license in [LICENSE.md](LICENSE.md) applies to original packaging code, 
 
 Claude Desktop is published by Anthropic. Its executable, Electron runtime, ASAR resources, icons, and bundled components are downloaded from the official upstream repository during package builds; they are not part of this Git repository.
 
-The PKGBUILD records `LicenseRef-Proprietary` for the installed application and `MIT` for the original launcher. It installs upstream's Debian copyright notice under `/usr/share/licenses/claude-desktop-local/LICENSE` and the packaging MIT notice alongside it as `Packaging-MIT`. Bundled components retain their respective upstream license notices. The MIT license for packaging is not a license for the application assets.
+The PKGBUILD records `LicenseRef-Proprietary` for the installed application and `MIT` for the original launcher. It installs upstream's Debian copyright notice under `/usr/share/licenses/claude-desktop-sandboxed/LICENSE` and the packaging MIT notice alongside it as `Packaging-MIT`. Bundled components retain their respective upstream license notices. The MIT license for packaging is not a license for the application assets.
 
 ## Public Key And Signed Test Metadata
 

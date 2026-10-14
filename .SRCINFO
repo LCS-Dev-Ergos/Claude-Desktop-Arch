@@ -1,7 +1,7 @@
-pkgbase = claude-desktop-local
-	pkgdesc = Unofficial Claude Desktop packaging from official Linux assets
+pkgbase = claude-desktop-sandboxed
+	pkgdesc = Claude Desktop with required renderer sandboxing and a restricted launcher
 	pkgver = 2.37337.1
-	pkgrel = 2
+	pkgrel = 3
 	url = https://claude.com/download
 	arch = x86_64
 	license = LicenseRef-Proprietary
@@ -56,6 +56,7 @@ pkgbase = claude-desktop-local
 	provides = claude-desktop
 	conflicts = claude-desktop
 	conflicts = claude-desktop-bin
+	conflicts = claude-desktop-local
 	noextract = claude-desktop_2.37337.1_amd64.deb
 	options = !strip
 	options = !debug
@@ -72,4 +73,4 @@ pkgbase = claude-desktop-local
 	sha256sums = b13bc406b3ef146d0046a9069d96ae7dcdfb8b9d6c067fb1d80a1d7d02a81023
 	sha256sums = 41745b0914f0ff51631a1ff1bb403b836bf5c995845cca6742dd39bca3a2da14
 
-pkgname = claude-desktop-local
+pkgname = claude-desktop-sandboxed

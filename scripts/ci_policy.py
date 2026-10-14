@@ -60,7 +60,7 @@ def metadata(text: str) -> dict:
     for name in ('pkgbase', 'pkgname', 'pkgver', 'pkgrel'):
         if len(fields.get(name, [])) != 1:
             raise ValueError(f'Expected one {name}')
-    if fields['pkgbase'] != ['claude-desktop-local'] or fields['pkgname'] != ['claude-desktop-local']:
+    if fields['pkgbase'] != ['claude-desktop-sandboxed'] or fields['pkgname'] != ['claude-desktop-sandboxed']:
         raise ValueError('Unexpected AUR package identity')
     version, release = fields['pkgver'][0], fields['pkgrel'][0]
     if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', version) or not re.fullmatch(r'[1-9][0-9]*', release):
